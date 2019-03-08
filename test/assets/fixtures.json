@@ -1,0 +1,10 @@
+{
+  "lotteryPots": [
+    {
+      "potName": "pot-Test01",
+      "closeDatedTime": 3600,
+      "minStake": 10,
+      "potType": 0
+    }
+  ]
+}
