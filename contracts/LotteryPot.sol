@@ -12,17 +12,17 @@ contract LotteryPot is Ownable {
   uint public minStake;
 
   enum PotType { fairShare, weightedShare }
-  PotType potType;
+  PotType public potType;
 
   enum PotState { open, winnerDecided, stakeWithdrawn }
-  PotState potState;
+  PotState public potState;
 
-  address payable winner;
+  address payable public winner;
 
   // Pot stakes
   mapping(address => uint) stakesMapping;
   uint public totalPotValue;
-  uint public tatalPotParticipants;
+  uint public totalPotParticipants;
 
   // Events declaration
   event NewParticipantJoin(address indexed participant, uint indexed value, uint indexed timestamp);
@@ -44,7 +44,7 @@ contract LotteryPot is Ownable {
   }
 
   // ----------------
-
+  // _minStake: in the unit of wei
   constructor(string memory _potName, uint _closedDateTime, uint _minStake,
     PotType _potType) public {
     potName = _potName;
@@ -59,7 +59,7 @@ contract LotteryPot is Ownable {
   function participate() public payable aboveMinStake haveNotParticipated beforeClosed {
     stakesMapping[msg.sender] = msg.value;
     totalPotValue.add(msg.value);
-    tatalPotParticipants.add(1);
+    totalPotParticipants.add(1);
 
     emit NewParticipantJoin(msg.sender, msg.value, now);
   }

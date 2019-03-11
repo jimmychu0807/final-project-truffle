@@ -1,10 +1,21 @@
 {
-  "lotteryPots": [
-    {
+  "lotteryPots": {
+    "enum": {
+      "potType": {
+        "fairShare": 0,
+        "weightedShare": 1
+      },
+      "potState": {
+        "open": 0,
+        "winnerDecided": 1,
+        "stakeWithdrawn": 2
+      }
+    },
+    "fixtures": [ {
       "potName": "pot-Test01",
       "closeDatedTime": 3600,
-      "minStake": 10,
+      "minStake": 1,
       "potType": 0
-    }
-  ]
+    } ]
+  }
 }
