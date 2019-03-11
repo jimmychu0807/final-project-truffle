@@ -20,9 +20,8 @@ contract LotteryPot is Ownable {
   address payable public winner;
 
   // Pot stakes
-  mapping(address => uint) stakesMapping;
-  uint public totalPotValue;
-  uint public totalPotParticipants;
+  mapping(address => uint) public participantsMapping;
+  uint public totalParticipants;
 
   // Events declaration
   event NewParticipantJoin(address indexed participant, uint indexed value, uint indexed timestamp);
@@ -34,7 +33,7 @@ contract LotteryPot is Ownable {
   }
 
   modifier haveNotParticipated {
-    require(stakesMapping[msg.sender] == 0);
+    require(participantsMapping[msg.sender] == 0);
     _;
   }
 
@@ -57,10 +56,8 @@ contract LotteryPot is Ownable {
 
   // To participate in the pot, but also defined this as the fallback function
   function participate() public payable aboveMinStake haveNotParticipated beforeClosed {
-    stakesMapping[msg.sender] = msg.value;
-    totalPotValue.add(msg.value);
-    totalPotParticipants.add(1);
-
+    participantsMapping[msg.sender] = msg.value;
+    totalParticipants = totalParticipants.add(1);
     emit NewParticipantJoin(msg.sender, msg.value, now);
   }
 
