@@ -17,7 +17,7 @@ contract LotteryPot is Ownable {
   enum PotState { open, closed, stakeWithdrawn }
   PotState public potState;
 
-  address public winner;
+  address internal winner;
 
   // Pot stakes - using mapping iterator pattern
   mapping(address => uint) participantsStakes;
@@ -53,7 +53,7 @@ contract LotteryPot is Ownable {
     _;
   }
 
-  modifier atState(PortState state) {
+  modifier atState(PotState state) {
     require(potState == state);
     _;
   }
@@ -71,7 +71,7 @@ contract LotteryPot is Ownable {
     uint _minStake,
     PotType _potType
   )
-    public
+    public payable
   {
     require(_minStake > 0, "The minimum stake has to be greater than 0.");
     require(msg.value >= _minStake);
@@ -105,20 +105,36 @@ contract LotteryPot is Ownable {
     participate();
   }
 
-  function totalParticipants() external returns(uint) {
+  function totalParticipants() external view returns(uint) {
     return participants.length;
   }
 
   function totalStakes() public view returns(uint) {
-    // TODO: implement this
-    // using map reduce in solidity
+    // TO_ENHANCE: can be optimized, remember with a cache var, or using a more
+    //   elegant map reduce style.
+    uint stakes = 0;
+    for (uint i = 0; i < participants.length; i++) {
+      stakes += participantsStakes[participants[i]];
+    }
+    return stakes;
   }
 
-  function determineWinner() internal returns(address) {
-    // TODO: determine winner based on the potType
+  function determineWinner() internal view returns(address) {
+    address _winner = address(0);
+
+    if (potType == PotType.fairShare) {
+      // TO_IMPLEMENT: mocking now
+      _winner = participants[0];
+      return _winner;
+    }
+
+    // Dealing with weightedShare
+    // TO_IMPLEMENT: mocking now
+    _winner = participants[participants.length - 1];
+    return _winner;
   }
 
-  function winner() public
+  function getWinner() public
     timedTransition
     atState(PotState.closed)
     returns(address)
@@ -153,7 +169,7 @@ contract LotteryPot is Ownable {
     onlyOwner
   {
     // Only the owner himself is involved, or money has been withdrawn
-    require(totalParticipants() == 1 || potState == PotState.stakeWithdrawn);
+    require(participants.length == 1 || potState == PotState.stakeWithdrawn);
     selfdestruct(msg.sender);
   }
 }

@@ -11,5 +11,6 @@ module.exports = function(deployer) {
   const minStakeInWei = web3.utils.toWei(lotteryPotData.minStake.toString(), "ether");
 
   deployer.deploy(LotteryPot, lotteryPotData.potName,
-    closeDateTime.valueOf(), minStakeInWei, lotteryPotData.potType);
+    closeDateTime.valueOf(), minStakeInWei, lotteryPotData.potType,
+    { value: minStakeInWei });
 };
