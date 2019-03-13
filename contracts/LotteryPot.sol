@@ -116,8 +116,8 @@ contract LotteryPot is Ownable {
   }
 
   function totalStakes() public view returns(uint) {
-    // TO_ENHANCE: can be optimized, remember with a cache var, or using a more
-    //   elegant map reduce style.
+    // TO_ENHANCE: can be optimized, remember the value with a cache var, or
+    //   using a more elegant map reduce style.
     uint stakes = 0;
     for (uint i = 0; i < participants.length; i++) {
       stakes += participantsStakes[participants[i]];
@@ -144,7 +144,7 @@ contract LotteryPot is Ownable {
     return participants[index];
   }
 
-  // Purposefully make this function allow to be run by anybody, not just the
+  // Purposefully make this function allowed to be run by anybody, not just the
   //   contract owner.
   function determineWinner() public
     timedTransition
