@@ -7,6 +7,10 @@ contract LotteryPot is Ownable {
   using SafeMath for uint;
 
   // --- State Variables Declaration ---
+
+  // constant
+  uint constant MIN_DURATION = 300;
+
   // Basic info
   string public potName;
   uint public closedDateTime;
@@ -18,7 +22,7 @@ contract LotteryPot is Ownable {
   enum PotState { open, closed, stakeWithdrawn }
   PotState public potState;
 
-  address internal winner;
+  address public winner;
 
   // Pot stakes - using mapping iterator pattern
   mapping(address => uint) participantsStakes;
@@ -70,7 +74,7 @@ contract LotteryPot is Ownable {
   // _minStake: in the unit of wei
   constructor (
     string memory _potName,
-    uint _closedDateTime,
+    uint _duration,
     uint _minStake,
     PotType _potType
   )
@@ -78,10 +82,10 @@ contract LotteryPot is Ownable {
   {
     require(_minStake > 0, "The minimum stake has to be greater than 0.");
     require(msg.value >= _minStake);
-    require (_closedDateTime > now);
+    require (_duration >= MIN_DURATION);
 
     potName = _potName;
-    closedDateTime = _closedDateTime;
+    closedDateTime = now + _duration;
     minStake = _minStake;
     potType = _potType;
     potState = PotState.open;
@@ -122,7 +126,7 @@ contract LotteryPot is Ownable {
     return stakes;
   }
 
-  function determineWinner() internal view returns(address) {
+  function determineWinnerInternal() internal view returns(address) {
     address _winner = address(0);
 
     if (potType == PotType.fairShare) {
@@ -137,18 +141,14 @@ contract LotteryPot is Ownable {
     return _winner;
   }
 
-  function getWinner() public
+  function determineWinner() public
     timedTransition
     atState(PotState.closed)
-    returns(address)
   {
-    if (winner != address(0)) {
-      return winner;
-    }
+    if (winner != address(0)) return;
 
-    winner = determineWinner();
+    winner = determineWinnerInternal();
     emit WinnerDetermined(winner, totalStakes());
-    return winner;
   }
 
   function winnerWithdraw() public

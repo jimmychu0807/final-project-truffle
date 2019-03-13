@@ -13,7 +13,7 @@
     },
     "fixtures": [ {
       "potName": "pot-Test01",
-      "closeDatedTime": 3600,
+      "duration": 3600,
       "minStake": 1,
       "potType": 0
     } ]
