@@ -47,7 +47,7 @@ contract("TestLotteryPot", accts => {
     assert.include(error.message, "VM Exception while processing transaction: revert");
   });
 
-  it.only("should allow a new participant to join", async() => {
+  it("should allow a new participant to join", async() => {
     const instance = await LotteryPot.deployed();
 
     // 2nd participant
@@ -72,5 +72,17 @@ contract("TestLotteryPot", accts => {
     // Test my stake is recorded properly
     assert((await instance.myStake({ from: this.secondParticipant.from }))
       .eq(this.secondParticipant.value));
+  });
+
+  it("a contract ends, determines winner, and allow winner (and only winner) to withdraw fund",
+    async() => {
+
+    const instance = await LotteryPot.deployed();
+
+    let totalStakes = await instance.totalStakes();
+    let totalParticipants = await instance.totalParticipants();
+
+    console.log(`total stakes: ${totalStakes}, ${totalStakes.toString()}`);
+    console.log(`total participants: ${totalParticipants}, ${totalParticipants.toString()}`);
   });
 });
