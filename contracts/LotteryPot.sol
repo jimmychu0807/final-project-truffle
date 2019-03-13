@@ -28,7 +28,6 @@ contract LotteryPot is Ownable {
   mapping(address => uint) participantsStakes;
   address[] public participants;
 
-
   // --- Events Declaration ---
 
   event NewParticipantJoin(
@@ -127,20 +126,26 @@ contract LotteryPot is Ownable {
   }
 
   function determineWinnerInternal() internal view returns(address) {
-    address _winner = address(0);
-
+    // Dealing with fairShare
     if (potType == PotType.fairShare) {
-      // TO_IMPLEMENT: mocking now
-      _winner = participants[0];
-      return _winner;
+      uint index = uint(keccak256(abi.encodePacked(block.timestamp, block.difficulty))) %
+        participants.length;
+      return participants[index];
     }
 
     // Dealing with weightedShare
-    // TO_IMPLEMENT: mocking now
-    _winner = participants[participants.length - 1];
-    return _winner;
+    uint remaining = uint(keccak256(abi.encodePacked(block.timestamp, block.difficulty))) %
+      totalStakes();
+    uint index = 0;
+    while (remaining > participantsStakes[participants[index]]) {
+      remaining -= participantsStakes[participants[index]];
+      index += 1;
+    }
+    return participants[index];
   }
 
+  // Purposefully make this function allow to be run by anybody, not just the
+  //   contract owner.
   function determineWinner() public
     timedTransition
     atState(PotState.closed)

@@ -15,6 +15,7 @@ const lotteryPotData = fixtures.lotteryPots.fixtures[0];
 const lotteryPotEnum = fixtures.lotteryPots.enum;
 const acceptedMinStake = w3utils.toWei(w3utils.toBN(lotteryPotData.minStake), "ether");
 const rejectedMinStake = acceptedMinStake.subn(1000);
+const MAX_DISCREPANCY = w3utils.toBN('1000000000000000');
 
 contract("TestLotteryPot - general", accts => {
 
@@ -84,23 +85,39 @@ contract("TestLotteryPot - lifecycle", accts => {
     const instance = await LotteryPot.deployed();
     await instance.participate(this.secondParticipant);
 
+    let error, tx, ev;
+
     // Test: Should fail if we close now
-    const error = await instance.determineWinner()
+    error = await instance.determineWinner()
       .then(assert.fail, err => err);
     assert.include(error.message, "VM Exception while processing transaction: revert");
 
     // Fast forward time
     await helpers.advanceTimeAndBlock(lotteryPotData.duration + 1);
 
-    const tx = await instance.determineWinner();
+    tx = await instance.determineWinner();
 
     // Verify event
-    const ev = tx.logs[0];
+    ev = tx.logs[0];
     assert.isOk(ev);
     assert.equal(ev.event, "WinnerDetermined");
 
     // Verify a winner is determined.
     const winner = await instance.winner();
     assert.isOk(winner.toString().startsWith("0x"));
+
+    // Withdraw money from an outsider
+    error = await instance.winnerWithdraw({ from: this.thirdParticipant.from })
+      .then(assert.fail, err => err);
+    assert.include(error.message, "VM Exception while processing transaction: revert");
+
+    // Withdraw money by winner
+    const beforeBal = w3utils.toBN(await web3.eth.getBalance(winner));
+    tx = await instance.winnerWithdraw({ from: winner });
+    const afterBal = w3utils.toBN(await web3.eth.getBalance(winner));
+    const totalStakes = await instance.totalStakes();
+
+    // after - before ~ totalStakes
+    assert.isOk( afterBal.sub(beforeBal).sub(totalStakes).abs().lte(MAX_DISCREPANCY) );
   });
 });
