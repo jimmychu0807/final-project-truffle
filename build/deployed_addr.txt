@@ -1,0 +1,65 @@
+rinkeby:
+
+Starting migrations...
+======================
+> Network name:    'rinkeby'
+> Network id:      4
+> Block gas limit: 7014253
+
+
+1_initial_migration.js
+======================
+
+   Deploying 'Migrations'
+   ----------------------
+   > transaction hash:    0xc517159b0476a05947e8cb85f3f78b4a9edeed518c1e1fbbaf4c8b760447ec97
+   > Blocks: 0            Seconds: 9
+   > contract address:    0x946A50Ae783e9aFD42eEA517a0C0b7257F9f22aC
+   > account:             0x627306090abaB3A6e1400e9345bC60c78a8BEf57
+   > balance:             18.938035058710712822
+   > gas used:            273162
+   > gas price:           20 gwei
+   > value sent:          0 ETH
+   > total cost:          0.00546324 ETH
+
+   Pausing for 2 confirmations...
+   ------------------------------
+   > confirmation number: 1 (block: 4022894)
+   > confirmation number: 2 (block: 4022895)
+
+   > Saving migration to chain.
+   > Saving artifacts
+   -------------------------------------
+   > Total cost:          0.00546324 ETH
+
+
+2_deploy_contracts.js
+=====================
+
+   Deploying 'LotteryPot'
+   ----------------------
+   > transaction hash:    0x08521b5cb38312a929c04d36a09b4d6f9c0ca641a7acb35922e3bc5f73a79238
+   > Blocks: 0            Seconds: 9
+   > contract address:    0x15C33f58ab36cdAd7D434bEeCA79Fa16437D49c9
+   > account:             0x627306090abaB3A6e1400e9345bC60c78a8BEf57
+   > balance:             18.856599958710712822
+   > gas used:            1529727
+   > gas price:           20 gwei
+   > value sent:          0.05 ETH
+   > total cost:          0.08059454 ETH
+
+   Pausing for 2 confirmations...
+   ------------------------------
+   > confirmation number: 1 (block: 4022898)
+   > confirmation number: 2 (block: 4022899)
+
+   > Saving migration to chain.
+   > Saving artifacts
+   -------------------------------------
+   > Total cost:          0.08059454 ETH
+
+
+Summary
+=======
+> Total deployments:   2
+> Final cost:          0.08605778 ETH
