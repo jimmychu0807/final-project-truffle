@@ -6,6 +6,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract LotteryPot is Ownable {
   using SafeMath for uint;
 
+  // --- State Variables Declaration ---
   // Basic info
   string public potName;
   uint public closedDateTime;
@@ -23,7 +24,9 @@ contract LotteryPot is Ownable {
   mapping(address => uint) participantsStakes;
   address[] public participants;
 
-  // Events declaration
+
+  // --- Events Declaration ---
+
   event NewParticipantJoin(
     address indexed participant,
     uint indexed value,
@@ -40,7 +43,7 @@ contract LotteryPot is Ownable {
     uint indexed totalStakes
   );
 
-  // Functions modifier
+  // --- Functions Modifier ---
   modifier aboveMinStake {
     require(minStake <= msg.value);
     _;
@@ -161,6 +164,11 @@ contract LotteryPot is Ownable {
     uint stakes = totalStakes();
     msg.sender.transfer(stakes);
     emit StakesWithdrawn(msg.sender, stakes);
+  }
+
+  // Public could only see his own stake in the game
+  function myStake() public view returns(uint) {
+    return participantsStakes[msg.sender];
   }
 
   /// Allow contract self-destruction if there is only owner involved, or
