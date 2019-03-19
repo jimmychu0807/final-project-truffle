@@ -89,6 +89,11 @@ contract LotteryPot is Ownable {
     potType = _potType;
     potState = PotState.open;
 
+    // Transfer ownership to tx.origin, because this constructor maybe called from a factory contract
+    if (tx.origin != msg.sender) {
+      transferOwnership(tx.origin);
+    }
+
     // The creator itself who set the minStake also need to participate in the game.
     participate();
   }
