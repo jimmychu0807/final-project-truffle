@@ -19,8 +19,13 @@ contract LotteryPotFactory is Ownable {
     string memory potName, uint duration, uint minStake,
     LotteryPot.PotType potType
   ) public payable returns(LotteryPot) {
-    LotteryPot newContract = (new LotteryPot).value(msg.value)({ _potName: potName,
-      _duration: duration, _minStake: minStake, _potType: potType });
+    LotteryPot newContract = (new LotteryPot).value(msg.value)({
+      _potName: potName,
+      _duration: duration,
+      _minStake: minStake,
+      _potType: potType,
+      _owner: msg.sender
+    });
 
     address newAddr = address(newContract);
 

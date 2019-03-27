@@ -11,6 +11,6 @@
   },
   "scripts": {
     "test": "truffle test",
-    "test:debug": "node --inspect-brk ./node_modules/truffle/build/cli.bundled.js test"
+    "test:debug": "node inspect ./node_modules/truffle/build/cli.bundled.js test"
   }
 }

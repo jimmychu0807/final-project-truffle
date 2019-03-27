@@ -13,7 +13,7 @@ const LotteryPot = artifacts.require("./LotteryPot.sol");
 // Some constant variables decl
 const lotteryPotData = fixtures.lotteryPots.fixtures[0];
 const lotteryPotEnum = fixtures.lotteryPots.enum;
-const acceptedMinStake = w3utils.toWei(w3utils.toBN(lotteryPotData.minStake), "ether");
+const acceptedMinStake = w3utils.toBN(w3utils.toWei(lotteryPotData.minStake.toString(), "ether"));
 const rejectedMinStake = acceptedMinStake.subn(1000);
 const MAX_DISCREPANCY = w3utils.toBN('1000000000000000');
 
@@ -38,30 +38,39 @@ contract("TestLotteryPot - general", accts => {
 
   it("should failed to participate as less than minStake", async() => {
     const instance = await LotteryPot.deployed();
+    const w3instance = new web3.eth.Contract(LotteryPot.abi, LotteryPot.address);
 
     // This should failed
-    const error = await instance.participate({ ...this.secondParticipant, value: rejectedMinStake })
+    const acctFrom = this.secondParticipant.from;
+
+    // Note: we use the web3 contract instance instead of TruffleContract because
+    //   truffle does not handle overloaded functions well
+    const error = await w3instance.methods.participate()
+      .send({ from: acctFrom, value: rejectedMinStake })
       .then(assert.fail, err => err);
     assert.include(error.message, "VM Exception while processing transaction: revert");
   });
 
   it("should allow a new participant to join", async() => {
     const instance = await LotteryPot.deployed();
+    const w3instance = new web3.eth.Contract(LotteryPot.abi, LotteryPot.address);
 
     // 2nd participant
     let totalStakes = await instance.totalStakes();
     let totalParticipants = await instance.totalParticipants();
 
-    const tx = await instance.participate(this.secondParticipant);
+    // We use spread at the end, because `send()` modify the option object - WTF!
+    const tx = await w3instance.methods.participate().send({...this.secondParticipant});
 
     totalStakes.iadd(this.secondParticipant.value);
     totalParticipants.iaddn(1);
 
     // Test event
-    assert.equal(tx.logs.length, 1);
-    const ev = tx.logs[0];
-    assert.equal(ev.args["participant"], this.secondParticipant.from);
-    assert.isOk(ev.args["value"].eq(this.secondParticipant.value));
+    Object.keys(tx.events);
+    assert.equal(Object.keys(tx.events).length, 1);
+    const ev = Object.entries(tx.events)[0][1];
+    assert.equal(ev.returnValues["participant"], this.secondParticipant.from);
+    assert.isOk(this.secondParticipant.value.eq( w3utils.toBN(ev.returnValues["value"]) ));
 
     // Test contract state
     assert.isOk((await instance.totalStakes()).eq(totalStakes));
@@ -83,7 +92,7 @@ contract("TestLotteryPot - lifecycle", accts => {
     async() => {
 
     const instance = await LotteryPot.deployed();
-    await instance.participate(this.secondParticipant);
+    await instance.participate(this.secondParticipant.from, {...this.secondParticipant});
 
     let error, tx, ev;
 

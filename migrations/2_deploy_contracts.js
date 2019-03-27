@@ -6,7 +6,7 @@ const fixtures = require('../test/assets/fixtures.json');
 const LotteryPot = artifacts.require("LotteryPot");
 const LotteryPotFactory = artifacts.require("LotteryPotFactory");
 
-module.exports = function(deployer) {
+module.exports = function(deployer, network, accounts) {
 
   // --- LotteryPot ---
   // Can be commented out when LoteryPotFactory is stablized
@@ -14,8 +14,8 @@ module.exports = function(deployer) {
   const minStakeInWei = web3.utils.toWei(lotteryPotData.minStake.toString(), "ether");
 
   deployer.deploy(LotteryPot, lotteryPotData.potName,
-    w3utils.toBN(lotteryPotData.duration), minStakeInWei, lotteryPotData.potType,
-    { value: minStakeInWei });
+    w3utils.toBN(lotteryPotData.duration), minStakeInWei,
+    lotteryPotData.potType, accounts[0], { value: minStakeInWei });
 
   // --- LotteryPotFactory ---
   deployer.deploy(LotteryPotFactory);

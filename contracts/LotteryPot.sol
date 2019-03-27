@@ -75,7 +75,8 @@ contract LotteryPot is Ownable {
     string memory _potName,
     uint _duration,
     uint _minStake,
-    PotType _potType
+    PotType _potType,
+    address _owner
   )
     public payable
   {
@@ -90,30 +91,34 @@ contract LotteryPot is Ownable {
     potState = PotState.open;
 
     // Transfer ownership to tx.origin, because this constructor maybe called from a factory contract
-    if (tx.origin != msg.sender) {
-      transferOwnership(tx.origin);
+    if (_owner != msg.sender) {
+      transferOwnership(_owner);
     }
 
     // The creator itself who set the minStake also need to participate in the game.
-    participate();
+    participate(_owner);
   }
 
   // To participate in the pot, but also defined this as the fallback function
-  function participate() public payable
+  function participate(address participant) public payable
     timedTransition
     aboveMinStake
     atState(PotState.open)
   {
-    if (participantsStakes[msg.sender] == 0) {
-      participants.push(msg.sender);
+    if (participantsStakes[participant] == 0) {
+      participants.push(participant);
     }
-    participantsStakes[msg.sender] += msg.value;
-    emit NewParticipantJoin(msg.sender, msg.value, now);
+    participantsStakes[participant] += msg.value;
+    emit NewParticipantJoin(participant, msg.value, now);
+  }
+
+  function participate() public payable {
+    participate(msg.sender);
   }
 
   // Fallback function default to `participate`
   function () external payable {
-    participate();
+    participate(msg.sender);
   }
 
   function totalParticipants() external view returns(uint) {
