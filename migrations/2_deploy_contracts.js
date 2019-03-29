@@ -10,12 +10,14 @@ module.exports = function(deployer, network, accounts) {
 
   // --- LotteryPot ---
   // Can be commented out when LoteryPotFactory is stablized
-  const lotteryPotData = fixtures.lotteryPots.fixtures[0];
-  const minStakeInWei = web3.utils.toWei(lotteryPotData.minStake.toString(), "ether");
+  if (network == "development") {
+    const lotteryPotData = fixtures.lotteryPots.fixtures[0];
+    const minStakeInWei = web3.utils.toWei(lotteryPotData.minStake.toString(), "ether");
 
-  deployer.deploy(LotteryPot, lotteryPotData.potName,
-    w3utils.toBN(lotteryPotData.duration), minStakeInWei,
-    lotteryPotData.potType, accounts[0], { value: minStakeInWei });
+    deployer.deploy(LotteryPot, lotteryPotData.potName,
+      w3utils.toBN(lotteryPotData.duration), minStakeInWei,
+      lotteryPotData.potType, accounts[0], { value: minStakeInWei });
+  }
 
   // --- LotteryPotFactory ---
   deployer.deploy(LotteryPotFactory);

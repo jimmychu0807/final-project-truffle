@@ -1,0 +1,12 @@
+testnet: rinkeby
+
+contracts:
+  LotteryPotFactory:
+
+    txHash: 0x34ba03ac09cfaa273d46ed61501265501543805f3791a63fcb35b19b60ee9c3d
+      inspection: https://rinkeby.etherscan.io/tx/0x34ba03ac09cfaa273d46ed61501265501543805f3791a63fcb35b19b60ee9c3d
+
+    contractAddr: 0x8133BcbaF4cF4a6263A2e6fB815f4dac180c03Ae
+      inspection: https://rinkeby.etherscan.io/address/0x8133bcbaf4cf4a6263a2e6fb815f4dac180c03ae
+
+
