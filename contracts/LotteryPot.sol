@@ -260,11 +260,16 @@ contract LotteryPot is Ownable {
     // Using check-effect-interaction pattern
     // 1. Check - done by modifiers
 
+    // Invariant check: make sure the contract has enough balance to be withdrawn from.
+    assert(address(this).balance >= totalStake);
+
     // 2. Effect
     //   But we still want to transition to next state only after successful
     //   winner withdrawal.
     uint stake = totalStake;
-    totalStake = 0;
+
+    // we don't reset totalStake to 0, so we have a record of how big the
+    //   lottery pot is.
 
     // 3. Interaction
     msg.sender.transfer(stake);
@@ -296,6 +301,9 @@ contract LotteryPot is Ownable {
   {
     // Using check-effect-interaction pattern
     // 1. Check - done by modifiers
+
+    // Invariant check: make sure the contract has enough balance to be withdrawn from.
+    assert(address(this).balance >= participantStakes[msg.sender]);
 
     // 2. Effect - set the participantStake = 0
     uint stake = participantStakes[msg.sender];
