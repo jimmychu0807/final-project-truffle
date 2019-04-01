@@ -14,7 +14,7 @@
     "fixtures": [ {
       "potName": "pot-Test01",
       "duration": 3600,
-      "minStake": 0.05,
+      "minStake": 0.0001,
       "potType": 0
     } ]
   }
