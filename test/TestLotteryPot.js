@@ -1,7 +1,6 @@
 "use strict"
 
 const moment = require('moment');
-const w3utils = web3.utils;
 
 // Helpers
 const helpers = require('./helpers/truffleTestHelper');
@@ -14,6 +13,7 @@ const LotteryPot = artifacts.require("./LotteryPot.sol");
 const lotteryPotData = fixtures.lotteryPots.fixtures[0];
 const lotteryPotEnum = fixtures.lotteryPots.enum;
 
+const w3utils = web3.utils;
 const VALID_POT_MIN_STAKE = w3utils.toBN(w3utils.toWei(lotteryPotData.minStake.toString(), "ether"));
 const INVALID_POT_MIN_STAKE = VALID_POT_MIN_STAKE.subn(1000);
 const MAX_DISCREPANCY = w3utils.toBN('1000000000000000');
@@ -53,8 +53,7 @@ contract("TestLotteryPot - general", accts => {
     assert.include(error.message, "VM Exception while processing transaction: revert");
   });
 
-  it("should allow a new participant to join, and the participant can add stake to the same pot",
-    async() => {
+  it("should allow a new participant to join, and the participant can add stake to the same pot", async() => {
 
     const instance = await LotteryPot.deployed();
     const w3instance = new web3.eth.Contract(LotteryPot.abi, LotteryPot.address);
@@ -67,8 +66,8 @@ contract("TestLotteryPot - general", accts => {
     //   object - WTF!
     const tx = await w3instance.methods.participate().send({...this.secondParticipant});
 
-    totalStake.iadd(this.secondParticipant.value);
     totalParticipants.iaddn(1);
+    totalStake.iadd(this.secondParticipant.value);
 
     // Test event is emitted
     Object.keys(tx.events);
@@ -97,14 +96,13 @@ contract("TestLotteryPot - general", accts => {
   });
 });
 
-contract("TestLotteryPot - life cycle", accts => {
+contract("TestLotteryPot - lifecycle", accts => {
 
   before(() => {
     LPhelpers.lotteryPotIntialSetup.bind(this)(accts, VALID_POT_MIN_STAKE);
   })
 
-  it("a contract ends, determines winner, and allow winner(and only winner) to withdraw fund, also test winner cannot double withdraw",
-    async() => {
+  it("a contract ends, determines winner, and allow winner(and only winner) to withdraw fund, also test winner cannot double withdraw", async() => {
 
     const instance = await LotteryPot.deployed();
     await instance.participate(this.secondParticipant.from, {...this.secondParticipant});
@@ -151,4 +149,90 @@ contract("TestLotteryPot - life cycle", accts => {
       .then(assert.fail, err => err);
     assert.include(error.message, "VM Exception while processing transaction: revert");
   });
+});
+
+contract("TestLotteryPot - fallback function", accts => {
+
+  before(() => {
+    LPhelpers.lotteryPotIntialSetup.bind(this)(accts, VALID_POT_MIN_STAKE);
+  })
+
+  it("should allows user to partcipate with the fallback function", async() => {
+
+    const instance = await LotteryPot.deployed();
+    let totalStake = w3utils.toBN(await instance.totalStake());
+    let totalParticipants = w3utils.toBN(await instance.totalParticipants());
+
+    // Calling the contract fallback method with sendTransaction
+    let tx = await web3.eth.sendTransaction({ to: instance.address,
+      ...this.secondParticipant });
+
+    // update our internal state to keep track of the change
+    totalParticipants.iaddn(1);
+    totalStake.iadd(this.secondParticipant.value);
+
+    assert.equal(totalParticipants.toString(), await instance.totalParticipants());
+    assert.equal(totalStake.toString(), await instance.totalStake());
+  });
+});
+
+contract("TestLotteryPot - circuit breaker 01", accts => {
+
+  before(() => {
+    LPhelpers.lotteryPotIntialSetup.bind(this)(accts, VALID_POT_MIN_STAKE);
+  })
+
+  it("should allows only contract creator to toggle `enabled` status", async() => {
+    const instance = await LotteryPot.deployed();
+    const secondAcct = this.secondParticipant.from;
+    let enabledState = await instance.enabled();
+
+    // Test: By default a contract is in `enabled` state
+    assert.equal(enabledState, true);
+
+    // Test: Verify contract `enabled` state cannot be toggled by random account
+    let error = await instance.toggleEnabled({ from: secondAcct })
+      .then(assert.fail, err => err);
+    assert.include(error.message, "VM Exception while processing transaction: revert");
+
+    let tx = await instance.toggleEnabled({ from: this.owner });
+    enabledState = !enabledState;
+
+    // Test: the `enabled` state should have toggled
+    assert.equal(enabledState, await instance.enabled());
+  });
+});
+
+contract("TestLotteryPot - circuit breaker 02", accts => {
+
+  it("when LotteryPot is disabled, new participant cannot join, existing participant can withdraw money, but cannot over-withdraw", async() => {
+
+    // Disable the LotteryPot
+    const instance = await LotteryPot.deployed();
+    let tx = await instance.toggleEnabled({ from: this.owner });
+
+    // Test: 2nd participant try to join, should fail
+    let error = await instance.participate(this.secondParticipant.from, {...this.secondParticipant})
+      .then(assert.fail, err => err);
+    assert.include(error.message, "VM Exception while processing transaction: revert");
+
+    // Test: allow the owner (existing participant) to withdraw money
+    let beforeBal = w3utils.toBN(await web3.eth.getBalance(this.owner));
+    let participantStake = w3utils.toBN(await instance.myStake({ from: this.owner }));
+    tx = await instance.participantWithdraw({ from: this.owner });
+
+    let afterBal = beforeBal.add(participantStake);
+    let ownerCurrentBal = w3utils.toBN(await web3.eth.getBalance(this.owner));
+
+    // Test: beforeBal + participantStake - current user balance = minor gas cost
+    //        (stored in var `afterBal`)
+    //
+    assert.isOk( afterBal.sub(ownerCurrentBal).lte(MAX_DISCREPANCY) );
+
+    // Test: participant cannot over-withdraw. The following should fail
+    error = await instance.participantWithdraw({ from: this.owner })
+      .then(assert.fail, err => err);
+    assert.include(error.message, "VM Exception while processing transaction: revert");
+  });
+
 });
