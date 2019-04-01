@@ -205,7 +205,7 @@ contract("TestLotteryPot - circuit breaker 01", accts => {
 
 contract("TestLotteryPot - circuit breaker 02", accts => {
 
-  it("when LotteryPot is disabled, new participant cannot join, existing participant can withdraw money, but cannot over-withdraw", async() => {
+  it("when LotteryPot is disabled, new participant cannot join, existing participants can withdraw money, but cannot over-withdraw", async() => {
 
     // Disable the LotteryPot
     const instance = await LotteryPot.deployed();

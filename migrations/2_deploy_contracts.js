@@ -9,7 +9,7 @@ const LotteryPotFactory = artifacts.require("LotteryPotFactory");
 module.exports = function(deployer, network, accounts) {
 
   // --- LotteryPot ---
-  // Can be commented out when LoteryPotFactory is stablized
+  // Only deployed in development for testing
   if (network == "development") {
     const lotteryPotData = fixtures.lotteryPots.fixtures[0];
     const minStakeInWei = web3.utils.toWei(lotteryPotData.minStake.toString(), "ether");
