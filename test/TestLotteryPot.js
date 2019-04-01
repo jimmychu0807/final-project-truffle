@@ -30,7 +30,7 @@ contract("TestLotteryPot - general", accts => {
     assert.equal(await instance.potName(), lotteryPotData.potName);
 
     assert.isOk((await instance.minStake()).eq(acceptedMinStake));
-    assert.equal(await instance.potType(), lotteryPotEnum.potType.fairShare);
+    assert.equal(await instance.potType(), lotteryPotEnum.potType.equalShare);
     assert.equal(await instance.potState(), lotteryPotEnum.potState.open);
     assert.equal(await instance.totalParticipants(), 1);
     assert.isOk((await instance.totalStakes()).eq(acceptedMinStake));

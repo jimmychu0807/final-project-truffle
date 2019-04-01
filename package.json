@@ -10,7 +10,8 @@
     "truffle-hdwallet-provider": "^1.0.5"
   },
   "scripts": {
-    "test": "truffle test",
-    "test:debug": "node inspect ./node_modules/truffle/build/cli.bundled.js test"
+    "compile": "truffle compile --all",
+    "test": "truffle test --compile-all",
+    "test:debug": "node inspect ./node_modules/truffle/build/cli.bundled.js test --compile-all"
   }
 }

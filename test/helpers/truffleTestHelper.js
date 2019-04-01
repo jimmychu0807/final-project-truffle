@@ -1,4 +1,5 @@
-// Refer to: https://medium.com/edgefund/time-travelling-truffle-tests-f581c1964687
+// For simulating time advancement in truffle test suite.
+//   Ref: https://medium.com/edgefund/time-travelling-truffle-tests-f581c1964687
 
 const advanceTime = (time) => {
   return new Promise((resolve, reject) => {

@@ -1,22 +1,30 @@
-pragma solidity >=0.5.1 <0.6.0;
+pragma solidity 0.5.4;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
+/// @author Jimmy Chu
+/// @title Lottery Pot Contract
 contract LotteryPot is Ownable {
   using SafeMath for uint;
 
-  // --- State Variables Declaration ---
-
-  // constant
+  // Pot closed time has to be at least 5 mins from current.
   uint constant MIN_DURATION = 300;
 
   // Basic info
   string public potName;
   uint public closedDateTime;
   uint public minStake;
+  uint public totalStake;
 
-  enum PotType { fairShare, weightedShare }
+  // equalShare - everyone has equal chance of winning in the pot.
+  //   If there are x people in the pot, each winning chance is 1/x.
+  //
+  // weightedShare - winning chance is determined by how much a player
+  //   contributed to the pot.
+  //   If there are three players, contributing [x, y, z] amount to the pot,
+  //   player 2 has the winning chance of y/(x+y+z).
+  enum PotType { equalShare, weightedShare }
   PotType public potType;
 
   enum PotState { open, closed, stakeWithdrawn }
@@ -24,37 +32,52 @@ contract LotteryPot is Ownable {
 
   address public winner;
 
-  // Pot stakes - using mapping iterator pattern
-  mapping(address => uint) participantsStakes;
+  // circuit-breaker can only be called from the factory. So we want to
+  //   save the factory address down.
+  address public factoryAddr;
+
+  // allow the public to query if this factory contract is enabled.
+  bool public enabled;
+
+  // Pot stakes - using mapping iterator pattern.
+  // To keep privacy, we don't allow user to query for participant stakes directly.
+  // But we have a myStake() method allowing participant to query his own stake.
+  mapping(address => uint) private participantStakes;
   address[] public participants;
 
   // --- Events Declaration ---
 
-  event NewParticipantJoin(
-    address indexed participant,
-    uint indexed value,
-    uint indexed timestamp
+  event ParticipantJoin(
+    address indexed participant
+  );
+
+  event ParticipantWithdraw(
+    address indexed participant
   );
 
   event WinnerDetermined(
-    address indexed winner,
-    uint indexed totalStakes
+    address indexed winner
   );
 
-  event StakesWithdrawn(
+  event WinnerWithdraw(
     address indexed winner,
-    uint indexed totalStakes
+    uint indexed totalStake
+  );
+
+  event LotteryPotEnabled(
+    bool indexed enabled
   );
 
   // --- Functions Modifier ---
+
   modifier aboveMinStake {
-    require(minStake <= msg.value);
+    require(msg.value >= minStake);
     _;
   }
 
-  modifier timedTransition {
+  modifier timeTransitions {
     if (now > closedDateTime && potState == PotState.open) {
-      potState = PotState.closed;
+      nextState();
     }
     _;
   }
@@ -64,13 +87,44 @@ contract LotteryPot is Ownable {
     _;
   }
 
-  modifier onlyByValidWinner {
-    require(winner != address(0) && winner == msg.sender);
+  modifier notAtState(PotState state) {
+    require(potState != state);
     _;
   }
 
-  // ----------------
-  // _minStake: in the unit of wei
+  modifier onlyBy(address addr) {
+    require(addr != address(0) && addr == msg.sender);
+    _;
+  }
+
+  modifier participantHasStake(address sender) {
+    require(participantStakes[sender] > 0);
+    _;
+  }
+
+  modifier transitionNext() {
+    _;
+    nextState();
+  }
+
+  // circuit-breaker pattern
+  modifier isEnabled {
+    require(enabled);
+    _;
+  }
+
+  modifier isDisabled {
+    require(!enabled);
+    _;
+  }
+  // --- end: circuit-breaker pattern
+
+  /// Create a new LotteryPot contract
+  /// @param _potName - Name of the lottery pot
+  /// @param _duration - The duration of the pot `open` period
+  /// @param _minStake - The minimum stake required to join the lottery pot
+  /// @param _potType - type of the pot
+  /// @param _owner - the owner to be recognized by this contract. Not necessarily `msg.sender` nor `tx.origin` for flexibility.
   constructor (
     string memory _potName,
     uint _duration,
@@ -84,115 +138,171 @@ contract LotteryPot is Ownable {
     require(msg.value >= _minStake);
     require (_duration >= MIN_DURATION);
 
+    enabled = true;
     potName = _potName;
-    closedDateTime = now + _duration;
+    closedDateTime = now.add(_duration);
     minStake = _minStake;
     potType = _potType;
     potState = PotState.open;
 
-    // Transfer ownership to tx.origin, because this constructor maybe called from a factory contract
+    // Lottery Pot creation should be called from its factory.
+    factoryAddr = msg.sender;
+    totalStake = 0;
+
+    // Transfer ownership to the owner, because it defaults to msg.sender
+    //   by OpenZeppelin
     if (_owner != msg.sender) {
       transferOwnership(_owner);
     }
 
-    // The creator itself who set the minStake also need to participate in the game.
+    // The creator also need to participate in the game.
     participate(_owner);
   }
 
-  // To participate in the pot, but also defined this as the fallback function
+  /// For a player to join in the game.
+  /// @dev Note that we also allow an existing participant to add stake into the game.
+  /// @param participant - address of the participant
   function participate(address participant) public payable
-    timedTransition
+    isEnabled
+    timeTransitions
     aboveMinStake
     atState(PotState.open)
   {
-    if (participantsStakes[participant] == 0) {
+    // This is a new participant, push into the array
+    if (participantStakes[participant] == 0) {
       participants.push(participant);
     }
-    participantsStakes[participant] += msg.value;
-    emit NewParticipantJoin(participant, msg.value, now);
+    participantStakes[participant] = participantStakes[participant].add(msg.value);
+    totalStake = totalStake.add(msg.value);
+    emit ParticipantJoin(participant);
   }
 
+  /// Convenient method for `msg.sender` to participate in the game.
   function participate() public payable {
     participate(msg.sender);
   }
 
-  // Fallback function default to `participate`
+  /// Fallback function defaults to participating in the game.
   function () external payable {
     participate(msg.sender);
   }
 
+  /// Internal function for advancing the pot state.
+  function nextState() internal {
+    potState = PotState(uint(potState) + 1);
+  }
+
+  /// Retrieving number of participants in the game
+  /// @return Number of participants in the game
   function totalParticipants() external view returns(uint) {
     return participants.length;
   }
 
-  function totalStakes() public view returns(uint) {
-    // TO_ENHANCE: can be optimized, remember the value with a cache var, or
-    //   using a more elegant map reduce style.
-    uint stakes = 0;
-    for (uint i = 0; i < participants.length; i++) {
-      stakes += participantsStakes[participants[i]];
-    }
-    return stakes;
+  /// Determine the winner of the pot, actual algorithm is delegated to an internal function
+  /// @dev Purposefully make this function allowed to be run by anybody, not just the contract owner.
+  /// @return Address of the winner
+  function determineWinner() public
+    isEnabled
+    timeTransitions
+    atState(PotState.closed)
+    returns(address)
+  {
+    if (winner != address(0)) return winner;
+
+    winner = determineWinnerInternal();
+    emit WinnerDetermined(winner);
+    return winner;
   }
 
+  /// Determine the winner of the lottery pot.
+  /// @return Address of the winner
   function determineWinnerInternal() internal view returns(address) {
-    // Dealing with fairShare
-    if (potType == PotType.fairShare) {
-      uint index = uint(keccak256(abi.encodePacked(block.timestamp, block.difficulty))) %
-        participants.length;
+    // Dealing with equalShare
+    if (potType == PotType.equalShare) {
+      uint index = getRandom(participants.length);
       return participants[index];
     }
 
     // Dealing with weightedShare
-    uint remaining = uint(keccak256(abi.encodePacked(block.timestamp, block.difficulty))) %
-      totalStakes();
+    uint remaining = getRandom(totalStake);
     uint index = 0;
-    while (remaining > participantsStakes[participants[index]]) {
-      remaining -= participantsStakes[participants[index]];
+    while (remaining > participantStakes[participants[index]]) {
+      remaining = remaining.sub(participantStakes[participants[index]]);
       index += 1;
     }
     return participants[index];
   }
 
-  // Purposefully make this function allowed to be run by anybody, not just the
-  //   contract owner.
-  function determineWinner() public
-    timedTransition
-    atState(PotState.closed)
-  {
-    if (winner != address(0)) return;
+  /// Generate a random value
+  /// @param len - the generated value is between 0 to len, exclusively.
+  /// @return A random number
+  function getRandom(uint len) internal view returns(uint) {
+    // Note: We are aware that miners can tweak the timestamp within 15s to
+    //   calc. result potentially favorable to them, so we also use
+    //   `block.difficulty` and `block.number` to add randomness that cannot
+    //   be controlled by miners.
 
-    winner = determineWinnerInternal();
-    emit WinnerDetermined(winner, totalStakes());
+    return uint(keccak256(abi.encodePacked(
+      block.timestamp,
+      block.number,
+      block.difficulty
+    ))).mod(len);
   }
 
+  /// Allowing winner to withdraw money.
+  /// @dev in order to prevent withrawal address is a malicious contract, we use check-effect-interaction pattern inside.
   function winnerWithdraw() public
-    timedTransition
+    isEnabled
     atState(PotState.closed)
-    onlyByValidWinner
+    onlyBy(winner)
+    transitionNext
   {
-    // 1. Check - done
+    // Using check-effect-interaction pattern
+    // 1. Check - done by modifiers
+
     // 2. Effect
-    potState = PotState.stakeWithdrawn;
+    //   But we still want to transition to next state only after successful
+    //   winner withdrawal.
+    uint stake = totalStake;
+    totalStake = 0;
 
     // 3. Interaction
-    uint stakes = totalStakes();
-    msg.sender.transfer(stakes);
-    emit StakesWithdrawn(msg.sender, stakes);
+    msg.sender.transfer(stake);
+    emit WinnerWithdraw(msg.sender, stake);
   }
 
-  // Public could only see his own stake in the game
+  /// Allow participant to check his own stake
+  /// @return stake of the `msg.sender` in the pot
   function myStake() public view returns(uint) {
-    return participantsStakes[msg.sender];
+    return participantStakes[msg.sender];
   }
 
-  /// Allow contract self-destruction if there is only owner involved, or
-  ///   the lottery stakes has been withdrawn
-  function destroy() public
-    onlyOwner
+  /// Toggling `enabled` status of this contract
+  /// @dev Only honor request from its factory, aka, the platform admin.
+  /// @return `enabled` status of this contract
+  function toggleEnabled() public onlyBy(factoryAddr) returns(bool) {
+    enabled = !enabled;
+    emit LotteryPotEnabled(enabled);
+    return enabled;
+  }
+
+  /// Allow participants to withdraw money when contract is rendered disabled
+  /// @dev Also want to check participants are not withdrawing from a pot that have all stakes withdrawn.
+  function participantWithdraw() public
+    isDisabled
+    timeTransitions
+    notAtState(PotState.stakeWithdrawn)
+    participantHasStake(msg.sender)
   {
-    // Only the owner himself is involved, or money has been withdrawn
-    require(participants.length == 1 || potState == PotState.stakeWithdrawn);
-    selfdestruct(msg.sender);
+    // Using check-effect-interaction pattern
+    // 1. Check - done by modifiers
+
+    // 2. Effect - set the participantStake = 0
+    uint stake = participantStakes[msg.sender];
+    participantStakes[msg.sender] = 0;
+
+    // 3. Interaction - tranfer
+    msg.sender.transfer(stake);
+    emit ParticipantWithdraw(msg.sender);
   }
 }

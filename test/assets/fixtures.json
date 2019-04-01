@@ -2,7 +2,7 @@
   "lotteryPots": {
     "enum": {
       "potType": {
-        "fairShare": 0,
+        "equalShare": 0,
         "weightedShare": 1
       },
       "potState": {
