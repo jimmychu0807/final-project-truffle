@@ -50,18 +50,18 @@ contract("TestLotteryPotFactory - createLotteryPot", accts => {
     assert.equal(secondPotName, await secondPot.potName());
 
     // Test 3: owner of the pot cannot disable the lottery pot
-    let error = await firstPot.toggleEnabled({ from: this.owner })
+    let error = await firstPot.disableContract({ from: this.owner })
       .then(assert.fail, err => err);
     assert.include(error.message, "VM Exception while processing transaction: revert");
 
     // Test 4: non-owner of the factory cannot disable the lottery pot
-    error = await factory.toggleLotteryPotEnabled(firstPot.address, {
+    error = await factory.disableLotteryPot(firstPot.address, {
       from: this.secondParticipant.from })
       .then(assert.fail, err => err);
     assert.include(error.message, "VM Exception while processing transaction: revert");
 
     // Test 5: owner of the factory can disable the lottery pot
-    let toggleTx = await factory.toggleLotteryPotEnabled(firstPot.address, {
+    let toggleTx = await factory.disableLotteryPot(firstPot.address, {
       from: this.owner });
     assert.equal(false, await firstPot.enabled());
   });

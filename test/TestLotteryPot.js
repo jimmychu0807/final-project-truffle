@@ -190,15 +190,15 @@ contract("TestLotteryPot - circuit breaker 01", accts => {
     // Test: By default a contract is in `enabled` state
     assert.equal(enabledState, true);
 
-    // Test: Verify contract `enabled` state cannot be toggled by random account
-    let error = await instance.toggleEnabled({ from: secondAcct })
+    // Test: Verify contract `enabled` state cannot be set by random account
+    let error = await instance.disableContract({ from: secondAcct })
       .then(assert.fail, err => err);
     assert.include(error.message, "VM Exception while processing transaction: revert");
 
-    let tx = await instance.toggleEnabled({ from: this.owner });
+    let tx = await instance.disableContract({ from: this.owner });
     enabledState = !enabledState;
 
-    // Test: the `enabled` state should have toggled
+    // Test: the `enabled` state should have set
     assert.equal(enabledState, await instance.enabled());
   });
 });
@@ -209,7 +209,7 @@ contract("TestLotteryPot - circuit breaker 02", accts => {
 
     // Disable the LotteryPot
     const instance = await LotteryPot.deployed();
-    let tx = await instance.toggleEnabled({ from: this.owner });
+    let tx = await instance.disableContract({ from: this.owner });
 
     // Test: 2nd participant try to join, should fail
     let error = await instance.participate(this.secondParticipant.from, {...this.secondParticipant})

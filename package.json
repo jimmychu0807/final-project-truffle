@@ -12,6 +12,7 @@
   "scripts": {
     "compile": "truffle compile --all",
     "test": "truffle test --compile-all",
-    "test:debug": "node inspect ./node_modules/truffle/build/cli.bundled.js test --compile-all"
+    "test:debug": "node inspect ./node_modules/truffle/build/cli.bundled.js test --compile-all",
+    "deploy:rinkeby": "truffle migrate --reset --compile-all --network rinkeby"
   }
 }

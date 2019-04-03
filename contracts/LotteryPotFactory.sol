@@ -96,16 +96,16 @@ contract LotteryPotFactory is Ownable {
     selfdestruct(msg.sender);
   }
 
-  /// Toggling `enabled` status of LotteryPot contract created by this factory
+  /// Disable a LotteryPot contract created by this factory
   /// @dev Only honor request from this contract owner, aka, the platform admin.
-  function toggleLotteryPotEnabled(
+  function disableLotteryPot(
     address payable potAddr
   )
   public
   onlyOwner
   createdByThisFactory(potAddr)
   returns(bool) {
-    return LotteryPot(potAddr).toggleEnabled();
+    return LotteryPot(potAddr).disableContract();
   }
 
 }

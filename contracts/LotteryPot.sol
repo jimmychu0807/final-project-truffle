@@ -282,11 +282,12 @@ contract LotteryPot is Ownable {
     return participantStakes[msg.sender];
   }
 
-  /// Toggling `enabled` status of this contract
-  /// @dev Only honor request from its factory, aka, the platform admin.
+  /// Disable this contract.
+  /// Once a contract is disabled, it cannot be enable back.
+  /// @dev Only honor request called from its factory, so only the platform admin should call this method.
   /// @return `enabled` status of this contract
-  function toggleEnabled() public onlyBy(factoryAddr) returns(bool) {
-    enabled = !enabled;
+  function disableContract() public onlyBy(factoryAddr) returns(bool) {
+    enabled = false;
     emit LotteryPotEnabled(enabled);
     return enabled;
   }
