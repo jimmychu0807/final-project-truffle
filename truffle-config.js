@@ -44,7 +44,6 @@ module.exports = {
       port: 7545,            // Standard Ethereum port (default: none)
       network_id: "*",       // Any network (default: none)
     },
-
     // Useful for deploying to a public network.
     // NB: It's important to wrap the provider as a function.
     // ropsten: {
@@ -58,6 +57,14 @@ module.exports = {
     rinkeby: {
       provider: () => new HDWalletProvider(process.env.MNEMONIC, process.env.RINKEBY_ENDPOINT),
       network_id: process.env.RINKEBY_NETWORK_ID,
+      gas: 5500000,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      skipDryRun: true
+    },
+    mainnet: {
+      provider: () => new HDWalletProvider(process.env.MNEMONIC, process.env.MAINNET_ENDPOINT),
+      network_id: process.env.MAINNET_NETWORK_ID,
       gas: 5500000,
       confirmations: 2,
       timeoutBlocks: 200,

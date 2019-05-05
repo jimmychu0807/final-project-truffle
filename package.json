@@ -13,6 +13,8 @@
     "compile": "truffle compile --all",
     "test": "truffle test --compile-all",
     "test:debug": "node inspect ./node_modules/truffle/build/cli.bundled.js test --compile-all",
+    "deploy:dev": "truffle migrate --reset --compile-all",
+    "deploy:mainnet": "truffle migrate --reset --compile-all --network mainnet",
     "deploy:rinkeby": "truffle migrate --reset --compile-all --network rinkeby"
   }
 }

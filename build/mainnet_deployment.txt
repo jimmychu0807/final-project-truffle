@@ -1,0 +1,83 @@
+2019-05-04 23:30:36:
+
+Starting migrations...
+======================
+> Network name:    'mainnet'
+> Network id:      1
+> Block gas limit: 8007811
+
+
+1_initial_migration.js
+======================
+
+   Deploying 'Migrations'
+   ----------------------
+   > transaction hash:    0x8cb0c64fb0fd98e594d4edfeda07bcf7fc71637e80d444f2ae618ee4fc039955
+   > Blocks: 1            Seconds: 26
+   > contract address:    0x17Ff45e307Bf8F76A9e447c9E12B454E0F438De2
+   > account:             0xB0fD5a878DBF3F9358A251caF9b6Fc692A999cA7
+   > balance:             1.301921344
+   > gas used:            273162
+   > gas price:           20 gwei
+   > value sent:          0 ETH
+   > total cost:          0.00546324 ETH
+
+   Pausing for 2 confirmations...
+   ------------------------------
+   > confirmation number: 1 (block: 7698573)
+   > confirmation number: 2 (block: 7698574)
+
+   > Saving migration to chain.
+   > Saving artifacts
+   -------------------------------------
+   > Total cost:          0.00546324 ETH
+
+
+2_deploy_contracts.js
+=====================
+
+   Deploying 'LotteryPot'
+   ----------------------
+   > transaction hash:    0x97ab15340cda74f1fa98ffecf2f5057f32794a88a9b72823f49f5bfb31d16b3f
+   > Blocks: 1            Seconds: 24
+   > contract address:    0xB663b91A35Af61C4D388Ff95067DD7A72d43BAb6
+   > account:             0xB0fD5a878DBF3F9358A251caF9b6Fc692A999cA7
+   > balance:             1.261362064
+   > gas used:            1980936
+   > gas price:           20 gwei
+   > value sent:          0.0001 ETH
+   > total cost:          0.03971872 ETH
+
+   Pausing for 2 confirmations...
+   ------------------------------
+   > confirmation number: 2 (block: 7698577)
+
+   Deploying 'LotteryPotFactory'
+   -----------------------------
+   > transaction hash:    0x8d111f8dd196d863d82913afbd3edb5f14d4069f148e2f2d39793ca40dfe9759
+   > Blocks: 1            Seconds: 60
+   > contract address:    0xb0e4F6d017a28DD7e0faa2cE7D22E41D4C1858d4
+   > account:             0xB0fD5a878DBF3F9358A251caF9b6Fc692A999cA7
+   > balance:             1.199339564
+   > gas used:            3101125
+   > gas price:           20 gwei
+   > value sent:          0 ETH
+   > total cost:          0.0620225 ETH
+
+   Pausing for 2 confirmations...
+   ------------------------------
+   > confirmation number: 1 (block: 7698579)
+   > confirmation number: 2 (block: 7698580)
+
+   > Saving migration to chain.
+   > Saving artifacts
+   -------------------------------------
+   > Total cost:          0.10174122 ETH
+
+
+Summary
+=======
+> Total deployments:   3
+> Final cost:          0.10720446 ETH
+
+✨  Done in 330.99s.
